@@ -1,0 +1,3 @@
+[submodule "services/CompreFace"]
+	path = services/CompreFace
+	url = https://github.com/theWickedWebDev/CompreFace
