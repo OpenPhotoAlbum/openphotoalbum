@@ -1,0 +1,12 @@
+{
+  "preset": "ts-jest",
+  "transform": {
+    "^.+\\.(ts|tsx)$": "ts-jest",
+    "^.+\\.(js)$": "babel-jest"
+  },
+  "verbose": true,
+  "testEnvironment": "node",
+  "collectCoverage": true,
+  "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.tsx?$",
+  "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"]
+}

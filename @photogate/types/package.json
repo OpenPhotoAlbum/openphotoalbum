@@ -1,0 +1,22 @@
+{
+	"name": "@photogate/types",
+	"version": "1.0.0",
+	"description": "Repository for all the shared typescript types for Photogate models",
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"scripts": {
+		"build": "rm -rf ./dist && tsc --module commonjs",
+		"build-local": "npm run build && cp $(npm pack | tail -n 1) ~"
+	},
+	"author": "Stephen Young <stephen@theyoungs.cloud>",
+	"license": "ISC",
+	"dependencies": {
+		"@elastic/elasticsearch": "^7.17.11",
+		"@photogate/media-exif-sdk": "file:../media-exif-sdk/photogate-media-exif-sdk-0.0.1-alpha0.tgz",
+		"typescript": "^5.0.4"
+	},
+	"devDependencies": {
+		"@types/color": "^3.0.3"
+	}
+}

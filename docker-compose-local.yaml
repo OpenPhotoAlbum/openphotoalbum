@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  compreface-db:
+    container_name: ${COMPREFACE_DB_CONTAINER_NAME}
+    image: postgres:11.5
+    env_file:
+      - ./config/.env
+    restart: always
+    networks:
+      - openphoto
+    environment:
+      POSTGRES_USER: ${COMPREFACE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${COMPREFACE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${COMPREFACE_POSTGRES_DB}
+    volumes:
+      - ./${SERVICES_LOCATION}/${COMPREFACE_DB_DIRECTORY}:/var/lib/postgresql/data:rw
+
+  compreface:
+    build: ./${SERVICES_LOCATION}/${COMPREFACE_SERVICE_DIR}/.
+    restart: always
+    container_name: ${COMPREFACE_CONTAINER_NAME}
+    networks:
+      - openphoto
+    ports:
+      - "${COMPREFACE_PORT}:80"
+    environment:
+      POSTGRES_USER: ${COMPREFACE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${COMPREFACE_POSTGRES_PASSWORD}
+      POSTGRES_URL: ${COMPREFACE_POSTGRES_URL}
+      EXTERNAL_DB: ${COMPREFACE_EXTERNAL_DB}
+    depends_on:
+      - compreface-db
+
+networks:
+  openphoto:
+    external: true

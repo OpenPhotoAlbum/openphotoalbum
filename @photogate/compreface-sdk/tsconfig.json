@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "target": "ESNext",
+    "declaration": true,
+    "moduleResolution": "node",
+    "emitDeclarationOnly": false,
+    "declarationDir": "lib",
+    "outDir": "dist",
+    "declarationMap": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": "./",
+    "paths": { "types": ["src/types"] }
+  }
+}

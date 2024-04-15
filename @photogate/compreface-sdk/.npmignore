@@ -1,0 +1,12 @@
+logs
+.env
+coverage
+sample
+mock
+node_modules
+src
+*.tgz
+demo.js
+.env-example
+jest.config.json
+tsconfig.json

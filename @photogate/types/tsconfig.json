@@ -1,0 +1,24 @@
+{
+	"compilerOptions": {
+		"module": "commonjs",
+		"esModuleInterop": true,
+		"target": "es6",
+		"lib": ["es2017", "es7", "es6", "dom"],
+		"allowJs": false,
+		"noImplicitAny": true,
+		"moduleResolution": "node",
+		"sourceMap": true,
+		"declaration": true,
+		"outDir": "dist",
+		"strict": true,
+		"baseUrl": "./src/",
+		"paths": {
+			"*": ["node_modules/*"]
+		}
+	},
+	"ts-node": {
+		"files": true
+	},
+	"exclude": ["node_modules", "dist"],
+	"include": ["./src"]
+}
