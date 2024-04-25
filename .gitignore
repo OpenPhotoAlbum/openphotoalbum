@@ -1,2 +1,4 @@
 services/data/
 services/compreface/data/
+node_modules
+sample

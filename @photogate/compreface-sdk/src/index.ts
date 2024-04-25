@@ -15,6 +15,12 @@ import {
   VerificationService,
 } from "./services";
 
+export {
+  RecognitionService,
+  DetectionService,
+  VerificationService,
+}
+
 /**
  * @name Compreface
  * Main Compreface SDK Class
@@ -56,7 +62,7 @@ class Compreface {
     this.detection_key = config.detection_key;
     this.recognition_uri = config.recognition_uri;
     this.detection_uri = config.detection_uri;
-    this.imageBasePath = config.imageBasePath;
+    this.imageBasePath = config.imageBasePath || '';
   }
 
   public initRecognitionService(): RecognitionService {

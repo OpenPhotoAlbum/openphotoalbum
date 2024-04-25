@@ -1,5 +1,6 @@
 import { Config, ServiceConfig, RecognizeType, Options, SubjectType, AddSubjectExampleSuccess, AddSubjectExampleFailure, DetectType } from "types";
 import { RecognitionService, DetectionService, VerificationService } from "./services";
+export { RecognitionService, DetectionService, VerificationService, };
 /**
  * @name Compreface
  * Main Compreface SDK Class

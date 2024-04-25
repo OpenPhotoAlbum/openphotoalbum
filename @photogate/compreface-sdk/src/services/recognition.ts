@@ -17,8 +17,7 @@ export class RecognitionService {
 
   constructor(config: ServiceConfig) {
     this.api = new Api({ key: config.key, url: config.url || '' });
-    this.imageBasePath =
-      config.imageBasePath || process.env.COMPREFACE_LOCAL_PHOTO_DIRECTORY;
+    this.imageBasePath = config.imageBasePath; // || process.env.COMPREFACE_LOCAL_PHOTO_DIRECTORY;
   }
 
   /**

@@ -1,0 +1,73 @@
+* {
+    box-sizing: border-box;
+}
+
+#Home {
+    display: inherit;
+    position: relative;
+    
+    .NewSubjectWrapper {
+        padding: 6px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+
+        > * {
+            flex: 1, 1;
+        }
+        button { max-width: 200px;}
+    }
+
+    header {
+        position: sticky;
+        top: 0;
+        width: 100%;
+        background: #fff;
+        border-bottom: solid 1px #a4a4a4;
+        padding: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        
+        > * {
+            flex: 1;
+        }
+
+        button {
+            max-width: 100px;
+            font-size: 14px;
+            text-wrap: nowrap;
+            border: solid 2px #ccc;
+        }
+    }
+
+    footer {
+        position: fixed;
+        top: calc(100% - 33px);
+        width: 100%;
+        background: #fff;
+        border-bottom: solid 1px #a4a4a4;
+        padding: 6px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+    }
+
+    // input:checked  + .SubjectImage {
+    //     outline: solid 6px #ea0cee;
+    //     border-radius: 6px;
+    // }
+
+    .SubjectImage {
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        display: block;
+        min-width: 100px;
+        min-height: 100px; 
+        max-width: 200px;
+    }
+}

@@ -1,363 +1,345 @@
-import exiftool from "node-exiftool";
-import color from "color";
-import { RawExifData } from "./types/Exif";
-import fs, { PathLike } from "fs";
-import Color from "color";
-import Path from "path";
-import { formatMetadata } from "./util/format";
-import mime from "mime";
-import sharp, { AvailableFormatInfo, FormatEnum, OutputInfo } from "sharp";
+import dotenv from "dotenv";
+import { Tags } from 'exiftool-vendored';
+import { Sharp, Logger, MediaExifTool, Fs } from './lib'
+import pathlib from 'path';
+import Compreface, { RecognitionService, VerificationService, DetectionService, DetectType, RecognizeType } from '/home/openphoto/@photogate/compreface-sdk'
 import exifremove from "exifremove";
-import {
-	Config,
-	Output,
-	Resize,
-	Crop,
-	CropBox,
-	CopyOptions,
-	ExifToolProcess,
-} from "./types/MediaExif";
 
-import { ExifData, MimeTypes } from "@photogate/types";
+import sharp, { OutputInfo } from 'sharp';
+import { WriteFileOptions, stat } from 'fs';
+import { Crop, CropBox, Resize } from './lib/Sharp';
+import { inspect } from "util";
+import mime from "mime";
 
-export * from "./types/Exif";
-export * from "./types/MediaExif";
+dotenv.config({ path: '/home/openphoto/config/.env.local' });
 
-new exiftool.ExiftoolProcess("/usr/bin/exiftool");
+const RECOGNITION_KEY = process.env.COMPREFACE_RECOGNITION_KEY;
+const DETECTION_KEY = process.env.COMPREFACE_DETECTION_KEY;
+const VERIFCATION_KEY = process.env.COMPREFACE_VERIFCATION_KEY;
+const API_URL = process.env.COMPREFACE_API_URL;
+const RECOGNITION_URI = process.env.COMPREFACE_RECOGNITION_URI;
+const VERIFICATION_URI = process.env.COMPREFACE_VERIFICATION_URI;
+const DETECTION_URI = process.env.COMPREFACE_DETECTION_URI;
 
-const THUMBNAIL_FLAG = "b";
-const PRINT_CONVERSION = "n";
-
-/**
- * @name MediaExif
- * Tool for managing media files
- * @method Media.getMetadata
- * @method Media.toFile
- * @method Media.toBuffer
- * @method Media.copy
- * @method Media.crop
- * @method Media.resize
- * @method Media.blur
- * @method Media.tint
- * @method Media.grayscale
- *
- * @example
- *
- * **New Media**
- * ```
- * const Media = new Exif({ path: "./image.jpeg", strip: true });
- * ```
- *
- * **Metadata**
- * ```
- * const Media = new Exif({ path: "./image.jpeg", strip: true });
- * const metadata = await Media.getMetadata();
- * console.log(metadata);
- * ```
-
-
- */
-class MediaExif {
-	// Config
-	public path: string;
-	public mime: string;
-	public strip: boolean;
-	public buffer: Buffer;
-	public data: ExifData;
-	public getMetaDataFlags = [PRINT_CONVERSION, THUMBNAIL_FLAG];
-	public raw: RawExifData;
-	public height: number;
-	public width: number;
-	private tool: ExifToolProcess;
-	public processable: boolean;
-	public dominantColor: string;
-
-	constructor(config: Config) {
-		this.path = config.path;
-		this.strip = config.strip || false;
-		this.mime = mime.getType(config.path);
-		this.tool = new exiftool.ExiftoolProcess("/usr/bin/exiftool");
-	}
-
-	private sharp(): sharp.Sharp {
-		return sharp(this.buffer || this.path)
-			.withMetadata()
-			.rotate();
-	}
-
-	private stripMetadata(): Buffer {
-		this.buffer = exifremove.remove(this.buffer);
-		return this.buffer;
-	}
-
-	private assertImage() {
-		if (!this.mime.includes("image")) {
-			throw new Error("toFile can only be used with image types");
-		}
-	}
-
-	private output(
-		buffer?: { data?: Buffer; info: sharp.OutputInfo },
-		path?: string
-	): Output {
-		this.height = buffer?.info?.height || this.data?.details?.imageHeight;
-		this.width = buffer?.info?.width || this.data?.details?.imageWidth;
-		this.buffer = buffer?.data;
-
-		return {
-			fileName: Path.parse(path || this.path).base,
-			directory: Path.parse(path || this.path).dir,
-			path: path || this.path,
-			mime: mime.getType(path || this.path) as MimeTypes,
-			format: buffer?.info.format,
-			size: buffer?.info.size || this.data?.fileSize,
-			width: this.width,
-			height: this.height,
-			channels: buffer?.info.channels,
-			premultiplied: buffer?.info.premultiplied,
-			metadata: this.data,
-			dominantColor: this.dominantColor,
-			buffer: undefined, // this.buffer,
-		};
-	}
-
-	public async isProcessable(): Promise<boolean> {
-		try {
-			const stats = await this.sharp().stats();
-			this.processable = Boolean(stats && stats.channels);
-		} catch (e) {
-			this.processable = false;
-		}
-		return this.processable;
-	}
-
-	public async getMetadata(): Promise<Output> {
-		try {
-			await this.tool.open();
-			await this.tool
-				.readMetadata<RawExifData>(this.path, this.getMetaDataFlags)
-				.then(
-					(res) => (this.raw = res?.data ? res?.data[0] : undefined),
-					console.error
-				)
-				.catch((e) => console.error(e));
-			await this.tool.close();
-			this.data = formatMetadata(this.raw);
-			this.height = this.data?.height;
-			this.width = this.data?.width;
-			let bufferData: {
-				data: Buffer | undefined;
-				info: OutputInfo | undefined;
-			};
-
-			if (this.mime.includes("image")) {
-				await this.sharp()
-					.stats()
-					.then(({ channels: [rc, gc, bc] }) => {
-						const r = Math.round(rc.mean),
-							g = Math.round(gc.mean),
-							b = Math.round(bc.mean);
-						this.dominantColor = color({ r, g, b }).hex();
-					})
-					.catch(console.error);
-			}
-
-			return this.output(bufferData);
-		} catch (e) {
-			console.error(e);
-		}
-	}
-
-	/**
-	 * @method
-	 * @name toFile
-	 * @example
-	 * ```
-	 * const Media = new Exif({ path: "./image.jpeg", strip: true });
-	 * console.log(
-	 *   await Media.toFile({ path: "./image-save.jpeg", format: "png"})
-	 * );
-	 * ```
-	 */
-	public async toFile(options?: {
-		path?: string;
-		format?: keyof FormatEnum | AvailableFormatInfo;
-	}): Promise<Output> {
-		this.assertImage();
-		await this.getMetadata();
-
-		let _path = options?.path;
-		let _outputDirectory = this.data?.directory;
-		const _fileName = this.data?.fileName;
-
-		if (!_path) {
-			_outputDirectory = `${this.data?.directory}/out`;
-
-			await fs.promises.mkdir(_outputDirectory, { recursive: true });
-			_path = `${_outputDirectory}/${_fileName}`;
-		}
-
-		const _sharp = this.sharp();
-
-		if (options?.format) {
-			_sharp.toFormat(options.format);
-			_path = _path.replace(Path.parse(_path).ext, `.${options.format}`);
-		}
-
-		if (this.strip) this.stripMetadata();
-
-		await _sharp.toFile(_path);
-		const bufferData = await _sharp.toBuffer({ resolveWithObject: true });
-		return this.output(bufferData, _path);
-	}
-
-	/**
-	 * @method
-	 * @name toBuffer
-	 * @example
-	 * ```
-	 * const Media = new Exif({ path: "./image.jpeg", strip: true });
-	 * console.log(await Media.toBuffer());
-	 * ```
-	 */
-	public async toBuffer(): Promise<Output> {
-		if (!this.buffer) this.buffer = await fs.promises.readFile(this.path);
-		if (this.strip) {
-			this.stripMetadata();
-		} else {
-			const data = await this.getMetadata();
-			this.data = data.metadata;
-		}
-		const bufferData = await this.sharp().toBuffer({ resolveWithObject: true });
-		return this.output(bufferData);
-	}
-
-	/**
-	 * @method
-	 * @name Crop
-	 * @example
-	 * ```
-	 * const Media = new Exif({ path: "./image.jpeg", strip: true });
-	 * console.log(
-	 *   await Media.copy(
-	 *     "./image-copy.jpeg"
-	     )
-	   );
-	 * ```
-	 */
-	public async copy(
-		dest: PathLike,
-		options?: CopyOptions
-	): Promise<Partial<Output>> {
-		if (!this.buffer) this.buffer = await fs.promises.readFile(this.path);
-		if (this.strip) this.stripMetadata();
-		await fs.promises.writeFile(dest, this.buffer, options);
-
-		// TODO: Figure out how to use this.output(???, dest);
-		const buffer = await sharp(this.buffer).toBuffer({
-			resolveWithObject: true,
-		});
-		return this.output(buffer);
-	}
-
-	/**
-	 * @method
-	 * @name Crop
-	 * @example
-	 * ```
-	 * const Media = new Exif({ path: "./image.jpeg", strip: true });
-	 * console.log(await Media.crop({ top: 0, left: 0, height: 300, width: 300 }));
-	 * ```
-	 */
-	public async crop(crop: Crop | CropBox): Promise<Output> {
-		this.assertImage();
-		let extract: Crop;
-		if (Array.isArray(crop)) {
-			const [xmax, xmin, ymax, ymin] = crop;
-			extract = {
-				left: xmin,
-				top: ymin,
-				width: xmax - xmin,
-				height: ymax - ymin,
-			};
-		} else {
-			extract = crop;
-		}
-
-		const _sharp = this.sharp().extract(extract);
-
-		const buffer = await _sharp.toBuffer({ resolveWithObject: true });
-
-		return this.output(buffer);
-	}
-
-	/**
-	 * @method
-	 * @name Resize
-	 * @example
-	 * ```
-	 * const Media = new Exif({ path: "./image.jpeg", strip: true });
-	 * console.log(await Media.resize({ width: 100 }));
-	 * ```
-	 */
-	public async resize({ height, width, fit }: Resize): Promise<Output> {
-		this.assertImage();
-		const buffer = await this.sharp()
-			.resize({
-				fit: sharp.fit[fit || "contain"],
-				height,
-				width,
-			})
-			.toBuffer({ resolveWithObject: true });
-		return this.output(buffer);
-	}
-
-	/**
-	 * Σ: a value between 0.3 and 1000 representing the sigma of the
-	 * Gaussian mask, where sigma = 1 + radius / 2.
-	 */
-	public async blur(Σ: number): Promise<Output> {
-		this.assertImage();
-		const buffer = await this.sharp()
-			.blur(Σ)
-			.toBuffer({ resolveWithObject: true });
-		return this.output(buffer);
-	}
-
-	/**
-	 * @method
-	 * @name **Tint**
-	 * @example
-	 * ```
-	 * const Media = new Exif({ path: "./image.jpeg", strip: true });
-	 * console.log(await Media.tint("#f00"));
-	 * ```
-	 */
-	public async tint(color: Color): Promise<Output> {
-		this.assertImage();
-		const rgb = Color(color).rgb().object();
-		const buffer = await this.sharp()
-			.tint(rgb)
-			.toBuffer({ resolveWithObject: true });
-		return this.output(buffer);
-	}
-
-	/**
-	 * @method
-	 * @name **Grayscale**
-	 * @example
-	 * ```
-	 * const Media = new Exif({ path: "./image.jpeg", strip: true });
-	 * console.log(await Media.grayscale())
-	 * ```
-	 */
-	public async grayscale(): Promise<Output> {
-		this.assertImage();
-		const buffer = await this.sharp()
-			.grayscale()
-			.toBuffer({ resolveWithObject: true });
-		return this.output(buffer);
-	}
+interface MediaType {
+    path: string
 }
 
-export default MediaExif;
+type WeatherType = {
+    moonday: number,
+    moonphase: number,
+    wind: string,
+    precipitation: string,
+    zenith: string,
+    humidity: string,
+    temperature: string,
+};
+
+type WeatherTags = Pick<Tags,
+    | 'AmbientTemperature'
+    | 'AmbientTemperatureFahrenheit'
+    | 'RelativeHumidity'
+    | 'UserComment'
+>;
+
+// = {
+//     AmbientTemperature: string;
+//     Humidity: string;
+//     UserComment
+// }
+
+enum Mount {
+    "foo",
+}
+
+enum Telescope {
+    "foo",
+}
+
+type ImageTags = {
+    dominantColor?: string;
+}
+/*
+
+ PERHAPS MAKE THIGNS LIKE WEATHER
+ ASRONOMY
+ ETC..    PLUGINS instead of built in
+
+*/
+type AstronomyTags = {
+    weather?: WeatherTags;
+    mount?: Mount;
+    telescope?: Telescope;
+    tracking?: boolean;
+    target?: {
+        ra: string;
+        dec: string;
+        name: string;
+    }
+}
+
+type FacesTags = {
+    recognized?: RecognizeType[];
+    detected?: DetectType[];
+};
+
+type CropOptions = {
+    postfix?: string;
+    dir?: string;
+}
+
+type ExtractedFace = {
+    image: string,
+    crop: string,
+}
+
+type ExtractedRecognizedFace = {
+    subject: unknown;
+    subject_id: string;
+} & ExtractedFace;
+
+type ExtractedDetectedFace = ExtractedFace
+
+type ExtractFaces = {
+    detected?: ExtractedDetectedFace[],
+    recognized?: ExtractedRecognizedFace[]
+}
+
+type AllMediaData = {
+    exif: Tags;
+    image?: ImageTags,
+    astronomy?: AstronomyTags
+    faces?: FacesTags
+};
+
+const GLOBAL_SIMILARITY_THRESHOLD = .97;
+
+class Media extends Fs {
+    config: MediaType;
+    logger = new Logger('Media');
+
+    private _exif: MediaExifTool;
+    private _sharp: Sharp;
+    private _Recognition: RecognitionService;
+    private _Detection: DetectionService;
+    private _tags: Tags;
+    private _dominantColor: string;
+
+    constructor(c: MediaType) {
+        super();
+        this.config = c;
+        const Compre = new Compreface({
+            api_url: API_URL,
+            recognition_key: RECOGNITION_KEY,
+            verification_key: VERIFCATION_KEY,
+            detection_key: DETECTION_KEY,
+            recognition_uri: RECOGNITION_URI,
+            verification_uri: VERIFICATION_URI,
+            detection_uri: DETECTION_URI
+        });
+        this._exif = new MediaExifTool(c);
+        this._Recognition = Compre.initRecognitionService();
+        this._Detection = Compre.initDetectionService();
+    }
+
+    private sharp(): Sharp | undefined {
+        if (!this._sharp) {
+            this._sharp = new Sharp(this.config)
+        }
+        return this._sharp;
+    }
+
+    private stripMetadata(b: Buffer): Buffer {
+        return exifremove.remove(b);
+    }
+
+    public async toFile(args: { name: string, options: WriteFileOptions } | undefined): Promise<string> {
+        const data = await this.toBuffer()
+
+        const _dest = args?.name
+            ? args.name
+            : `${this._exif.dir}/${this._exif.name}-copy${this._exif.ext}`;
+
+        try {
+            this.writeFile({ dest: _dest, data, options: args?.options || {} })
+            return _dest;
+
+        } catch (e) {
+            this.logger.error(e)
+        }
+    }
+
+    public async toBuffer(): Promise<Buffer> {
+        return await this.getBuffer(this.config.path)
+    }
+
+    public async getExifTags() {
+        try {
+            if (this._tags) return this._tags;
+            this._tags = await this._exif.readTags()
+            return this._tags;
+        } catch (e) {
+            this.logger.error(e)
+        }
+    }
+
+    public async exportAllData({ dir, jsonfile, extractFaces = false }: { dir?: string, jsonfile?: string, extractFaces: boolean }): Promise<AllMediaData> {
+        const data = await this.getAllData();
+        const filename = jsonfile || `${dir || this._exif.dir}/${this._exif.name}.json`;
+        if (extractFaces) {
+            const faces = await this.extractFaces({ dir });
+            data.faces = faces;
+        }
+        this.dataToFile(filename, data)
+
+        return data;
+    }
+
+    public async getAllData(): Promise<AllMediaData> {
+        let dominantColor = '#d4d4d4';
+
+        try {
+            dominantColor = await this.getDominantColor();
+        } catch (e) {
+            this.logger.warn(e)
+        }
+
+        const data = {
+            exif: await this.getExifTags(),
+            image: { dominantColor },
+            astronomy: {},
+            faces: {
+                recognized: await this.recognizeFaces(),
+                detected: await this.detectFaces()
+            }
+        }
+        return data
+    }
+
+    public async detectFaces() {
+        const { result, status } = await this._Detection.detect(this.config.path, {
+            face_plugins: ["age", "embedding", "gender", "landmarks", "pose", "mask"],
+            limit: 8,
+            det_prob_threshold: ".8",
+        });
+        if (status === 200) return result;
+    }
+
+    public async recognizeFaces() {
+        const { result, status } = await this._Recognition.recognize(this.config.path, {
+            face_plugins: ["age", "embedding", "gender", "landmarks", "pose", "mask"],
+            limit: 8,
+            det_prob_threshold: "0.9",
+        })
+        if (status === 200) return result;
+    }
+
+    public async extractFaces({ dir: _dir }: { dir: string }): Promise<ExtractFaces> {
+        const recognizedFaces = await this.recognizeFaces() || [];
+        const detectedFaces = await this.detectFaces() || [];
+
+        const recognizedRes = recognizedFaces ?
+            await Promise.all(recognizedFaces.map(async (recognized, i) => {
+                const { box, subjects } = recognized;
+
+                const c = [box.x_max, box.x_min, box.y_max, box.y_min] as CropBox;
+                const dir = _dir ? `${_dir}/subjects/${subjects[0].subject}` : undefined;
+                this.mkdirSync(dir);
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { subjects: _, ...rest } = recognized;
+                try {
+                    if (subjects[0].similarity > GLOBAL_SIMILARITY_THRESHOLD) {
+                        return {
+                            image: await this.crop(c, { dir, postfix: `___crop${i.toString()}` }),
+                            crop: c,
+                            subject: subjects[0],
+                            subject_id: subjects[0].subject,
+                            ...rest,
+                        }
+                    } else {
+                        // throw new Error('Recognized face not close enough')
+                    }
+                } catch (e) {
+                    this.logger.error(e)
+                }
+            }))
+            : []
+
+        const detectedRes = detectedFaces ?
+            await Promise.all(detectedFaces?.map(async (detected, i) => {
+                const { box } = detected;
+                const c = [box.x_max, box.x_min, box.y_max, box.y_min] as CropBox;
+                const wasRecognized = recognizedRes?.filter(a => a)
+                    .map(r => r.crop.join('')).includes(c.join('')) || false;
+
+                if (!wasRecognized) {
+                    const dir = _dir ? `${_dir}/detected/` : undefined;
+                    this.mkdirSync(dir);
+
+                    try {
+                        return {
+                            image: await this.crop(c, { dir, postfix: `___crop${i.toString()}` }),
+                            crop: c,
+                            ...detected
+                        }
+                    } catch (e) {
+                        this.logger.error(e)
+                    }
+                }
+            }))
+            : [];
+
+        return {
+            detected: detectedRes.filter(a => a),
+            recognized: recognizedRes.filter(a => a),
+        };
+    }
+
+    public async getDominantColor() {
+        try {
+            if (this._dominantColor) return this._dominantColor;
+
+            const s = this.sharp()
+            this._dominantColor = await s.getDominantColor()
+            return this._dominantColor;
+        } catch (e) {
+            this.logger.error(e)
+        }
+    }
+
+    public async crop(crop: Crop | CropBox, options: CropOptions = {}): Promise<string> {
+        const { postfix, dir } = options;
+        const filename = `${dir || this._exif.dir}/${this._exif.name}${postfix ? postfix : dir ? '' : '-crop'}.jpg`.replace('//', '/');
+        const cropBuffer = await this.sharp().crop(crop);
+        this.writeFile({ dest: filename, data: cropBuffer, options: {} })
+        return filename
+    }
+}
+
+export default Media;
+
+
+
+// '-Title=' + str(title),
+//             '-AmbientTemperature=' + str((float(weather.get('temperature').replace('°F', ''))-32)*(5/9)) if weather.get('temperature') else "",
+//             '-Humidity=' + str(float(weather.get('humidity').replace('%', ''))/100) if weather.get('humidity') else '',
+//             '-UserComment={\
+//                 "title": "' + str(title) + '", \
+//                 "luminance": "' + str(lum_val) + '", \
+//                 "target": { \
+//                     "id": "' + target_id + '", \
+//                     "name": "' + target_name + '", \
+//                     "ra": "' + target_ra + '", \
+//                     "dec": "' + target_dec + '" \
+//                 }, \
+//                 "moonday": "' + weather.get('moonday') + '", \
+//                 "moonphase": "' + weather.get('moonphase') + '", \
+//                 "wind": "' + weather.get('wind') + '", \
+//                 "precipitation": "' + weather.get('precipitation') + '", \
+//                 "zenith": "' + weather.get('zenith') + '", \
+//                 "condition": "' + weather.get('condition') + '", \
+//                 "humidity": "' + weather.get('humidity') + '", \
+//                 "temperature": "' + weather.get('') + '", \
+//                 "ra": "' + ra + '", \
+//                 "dec": "' + dec + '" \
+//             }',

@@ -1,0 +1,22 @@
+.Selector {
+    .SelectorWrapper {
+        width: 100%;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding-top: 10px;
+    }
+
+    input:checked  + .SubjectImage {
+        outline: solid 6px #ea0cee;
+        border-radius: 6px;
+    }
+
+    .SelectorLabel {
+        display: inline-block;
+        margin: 2px;
+        flex-grow: 1;
+        flex-basis: 0;
+     }
+
+}

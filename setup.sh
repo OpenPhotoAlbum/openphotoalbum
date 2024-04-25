@@ -1,0 +1,1 @@
+ln -s /home/openphoto/src/routes/api.ts /home/openphoto/src/explore-ui/src/shared/

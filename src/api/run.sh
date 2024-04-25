@@ -1,0 +1,1 @@
+nodemon ./dist/index.cjs

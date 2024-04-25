@@ -35,7 +35,7 @@ export class DetectionService {
     imagePath: string,
     query: Options = {}
   ): Promise<{ result: DetectType[]; status: number }> {
-    const imageSrc = this.imageBasePath + imagePath;
+    const imageSrc = imagePath;
     let img: string;
     try {
       img = fs.readFileSync(imageSrc, { encoding: "base64" });
@@ -57,7 +57,6 @@ export class DetectionService {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       }).filter(([_, v]) => v != null)
     );
-
     const url = `/detect?${stringify(_options)}`;
 
     try {
@@ -65,6 +64,7 @@ export class DetectionService {
       const { result }: { result: DetectType[] } = await res.json();
       return { result, status: res.status };
     } catch (e) {
+      console.log(e)
       return { result: undefined, status: e.status };
     }
   }
