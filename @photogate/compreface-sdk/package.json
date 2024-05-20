@@ -1,5 +1,5 @@
 {
-	"name": "@photogate/compreface-sdk",
+	"name": "@openphoto/compreface-sdk",
 	"version": "0.0.0-alpha.8",
 	"type": "module",
 	"main": "./dist/index.cjs",
@@ -34,7 +34,6 @@
 	},
 	"dependencies": {
 		"@jest/globals": "^29.5.0",
-		"@photogate/compreface-sdk": "^0.0.0-alpha.5",
 		"@types/jest": "^29.5.0",
 		"@typescript-eslint/eslint-plugin": "^5.57.0",
 		"@typescript-eslint/parser": "^5.57.0",

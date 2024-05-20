@@ -1,0 +1,32 @@
+.Page {
+    .Page_Header {
+        position: sticky;
+        top: 0;
+        width: 100%;
+        background: #fff;
+        border-bottom: solid 1px #a4a4a4;
+        padding: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        
+        > * {
+            flex: 1 1;
+        }
+    }
+
+    
+    .Page_Footer {
+        position: fixed;
+        top: calc(100% - 33px);
+        width: 100%;
+        background: #fff;
+        border-bottom: solid 1px #a4a4a4;
+        padding: 6px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+    }
+}

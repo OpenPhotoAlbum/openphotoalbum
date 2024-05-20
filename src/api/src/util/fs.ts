@@ -1,30 +1,57 @@
-import fs, { promises } from "fs";
-import path, { resolve } from "path";
+import fs from "fs";
+import path from "path";
 
-export async function* getFiles(dir: string, limit?: number) {
-    const _dirents = await promises.readdir(dir, { withFileTypes: true });
-    const dirents = limit ? _dirents.slice(0, limit) : _dirents;
+export function* readAllFiles(
+    dir: string,
+    match: RegExp = new RegExp('*'),
+    check: (arg: string) => boolean = () => true
+): Generator<string> {
+    const files = fs.readdirSync(dir, { withFileTypes: true });
 
-    for (const dirent of dirents) {
-        const res = resolve(dir, dirent.name);
-        if (dirent.isDirectory()) {
-            yield* getFiles(res, limit);
+    for (const file of files) {
+        if (file.isDirectory()) {
+            yield* readAllFiles(path.join(dir, file.name), match, check);
         } else {
-            yield res;
+            if (!match.test(file.name)) continue;
+
+            if (!check(path.join(dir, file.name))) {
+                continue;
+            }
+            yield path.join(dir, file.name);
         }
     }
 }
 
-export function flatten(lists) {
-    return lists.reduce((a, b) => a.concat(b), []);
+export function* readAllDirectories(dir: string, expand = false): Generator<string> {
+    const files = fs.readdirSync(dir, { withFileTypes: true });
+
+    for (const file of files) {
+        if (file.isDirectory()) {
+            yield path.join(dir, file.name);
+
+            if (expand) {
+                yield* readAllDirectories(path.join(dir, file.name), expand);
+            }
+        }
+    }
 }
 
-export function getDirectories(srcpath) {
-    return fs.readdirSync(srcpath)
-        .map(file => path.join(srcpath, file))
-        .filter(path => fs.statSync(path).isDirectory());
+export function* take<T>(input: Generator<T>, count: number): Generator<T> {
+    for (let i = 0; i < count; i++) {
+        const result = input.next();
+        if (result.done) {
+            return;
+        }
+        yield result.value;
+    }
 }
 
-export function getDirectoriesRecursive(srcpath) {
-    return [srcpath, ...flatten(getDirectories(srcpath).map(getDirectoriesRecursive))];
+export function* offset<T>(input: Generator<T>, count: number): Generator<T> {
+    for (let i = 0; i < count; i++) {
+        const result = input.next();
+        if (result.done) {
+            return;
+        }
+    }
+    yield* input;
 }

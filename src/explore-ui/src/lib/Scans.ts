@@ -6,36 +6,15 @@ export type ImageTags = {
     dominantColor?: string;
 }
 
-export enum Mount {
-    "foo"
-}
+export type ImageUrl = string;
+export type SubjectImage = ImageUrl;
+export type DetectedThumbnail = ImageUrl;
+export type RecognizedThumbnail = ImageUrl;
+export type FaceCrop = ImageUrl;
+export type FaceImage<T = DetectedThumbnail | RecognizedThumbnail> = T;
 
-export enum Telescope {
-    "foo"
-}
-
-
-export type WeatherTags = Pick<Tags,
-    | 'AmbientTemperature'
-    | 'AmbientTemperatureFahrenheit'
-    | 'RelativeHumidity'
-    | 'UserComment'
->
-
-export type AstronomyTags = {
-    weather?: WeatherTags;
-    mount?: Mount;
-    telescope?: Telescope;
-    tracking?: boolean;
-    target?: {
-        ra: string;
-        dec: string;
-        name: string;
-    }
-}
-
-export type Subject = {
-    image: string;
+export type Face = {
+    image: FaceImage;
     crop: number[];
     age: {
         probability: number;
@@ -65,27 +44,55 @@ export type Subject = {
     landmarks: [number, number][];
 }
 
-export type Recognition = Subject & {
-    subject: {
-        subject: string;
-        similarity: number
-    };
-    subject_id?: SubjectId;
+export type RecognizedFace = Face & {
+    image: FaceImage<RecognizedThumbnail>,
+    subjectId: SubjectId;
+    similarity: number
     verified?: boolean;
     vendor_image_id?: string;
 }
 
-export type Detection = Subject & {}
+export type DetectedFace = Face & {
+    image: FaceImage<DetectedThumbnail>;
+}
 
 export type Faces = {
-    recognized?: Recognition[];
-    detected?: Detection[];
+    recognized?: RecognizedFace[];
+    detected?: DetectedFace[];
 };
 
 export type Scan = {
     exif: Tags;
     image?: ImageTags;
-    astronomy?: AstronomyTags
+    // astronomy?: AstronomyTags
     faces?: Faces
 };
 
+/* ADD AS PLUGINS */
+
+export enum Mount {
+    "foo"
+}
+
+export enum Telescope {
+    "foo"
+}
+
+export type WeatherTags = Pick<Tags,
+    | 'AmbientTemperature'
+    | 'AmbientTemperatureFahrenheit'
+    | 'RelativeHumidity'
+    | 'UserComment'
+>
+
+export type AstronomyTags = {
+    weather?: WeatherTags;
+    mount?: Mount;
+    telescope?: Telescope;
+    tracking?: boolean;
+    target?: {
+        ra: string;
+        dec: string;
+        name: string;
+    }
+}

@@ -1,0 +1,24 @@
+.DateBadge {
+    font-weight: bold;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: #009fff;
+    color: #fff;
+    padding: 2px;
+
+    .DateBadge__MonthDay {
+        font-size: 10px;
+    }
+
+    .DateBadge__Year {
+        font-size: 14px;
+    }
+
+    &_short {
+        .DateBadge__MonthDay {
+            font-size: 14px;
+        }
+    }
+}

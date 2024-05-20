@@ -1,0 +1,27 @@
+#Home {
+    display: inherit;
+    position: relative;
+    
+    .NewSubjectWrapper {
+        padding: 6px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+
+        > * {
+            flex: 1, 1;
+        }
+        button { max-width: 200px;}
+    }
+
+    .SubjectImage {
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        display: block;
+        min-width: 100px;
+        min-height: 100px; 
+        max-width: 200px;
+    }
+}

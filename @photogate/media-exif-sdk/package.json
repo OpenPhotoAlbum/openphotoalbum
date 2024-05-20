@@ -38,7 +38,6 @@
 	},
 	"dependencies": {
 		"@colour-extractor/colour-extractor": "^1.0.1",
-		"@photogate/types": "file:../types/photogate-types-1.0.0.tgz",
 		"chalk": "^4.1.2",
 		"color": "^4.2.3",
 		"color.js": "^1.2.0",

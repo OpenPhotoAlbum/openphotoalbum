@@ -13,7 +13,6 @@
 	"license": "ISC",
 	"dependencies": {
 		"@elastic/elasticsearch": "^7.17.11",
-		"@photogate/media-exif-sdk": "file:../media-exif-sdk/photogate-media-exif-sdk-0.0.1-alpha0.tgz",
 		"typescript": "^5.0.4"
 	},
 	"devDependencies": {

@@ -61,7 +61,6 @@ async function* getFiles(dir) {
 
 const main = async () => {
     const base_scan_dir = process.env.SCAN_DIR;
-
     const getDirectories = async source =>
       (await readdir(source, { withFileTypes: true }))
         .filter(dirent => dirent.isDirectory())

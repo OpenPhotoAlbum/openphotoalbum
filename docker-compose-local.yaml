@@ -31,6 +31,33 @@ services:
     depends_on:
       - compreface-db
 
+  redis:
+    container_name: openphoto-redis
+    image: redis:alpine
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 100M
+        reservations:
+          cpus: "0.5"
+          memory: 50M
+    ports:
+      - "${REDIS_PORT}:6379"
+    networks:
+      - openphoto
+    command: >
+      --requirepass ${REDIS_PASSWORD}
+      --include /usr/local/etc/redis/redis.local.conf
+    volumes:
+      - ${REDIS_CONFIG_FILE}:/usr/local/etc/redis/redis.local.conf
+      - redis-cache-openphoto:/data
+
 networks:
   openphoto:
     external: true
+
+volumes:
+  redis-cache-openphoto:
+    driver: local

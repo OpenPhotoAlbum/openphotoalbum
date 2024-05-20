@@ -1,17 +1,16 @@
 import dotenv from "dotenv";
 import { Tags } from 'exiftool-vendored';
 import { Sharp, Logger, MediaExifTool, Fs } from './lib'
-import pathlib from 'path';
-import Compreface, { RecognitionService, VerificationService, DetectionService, DetectType, RecognizeType } from '/home/openphoto/@photogate/compreface-sdk'
+import Compreface, { RecognitionService, DetectionService } from '/home/openphoto/@photogate/compreface-sdk'
 import exifremove from "exifremove";
 
-import sharp, { OutputInfo } from 'sharp';
-import { WriteFileOptions, stat } from 'fs';
-import { Crop, CropBox, Resize } from './lib/Sharp';
-import { inspect } from "util";
-import mime from "mime";
+import { WriteFileOptions } from 'fs';
+import { Crop, CropBox } from './lib/Sharp';
 
 dotenv.config({ path: '/home/openphoto/config/.env.local' });
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ScannedFile = any; // TODO
 
 const RECOGNITION_KEY = process.env.COMPREFACE_RECOGNITION_KEY;
 const DETECTION_KEY = process.env.COMPREFACE_DETECTION_KEY;
@@ -24,93 +23,6 @@ const DETECTION_URI = process.env.COMPREFACE_DETECTION_URI;
 interface MediaType {
     path: string
 }
-
-type WeatherType = {
-    moonday: number,
-    moonphase: number,
-    wind: string,
-    precipitation: string,
-    zenith: string,
-    humidity: string,
-    temperature: string,
-};
-
-type WeatherTags = Pick<Tags,
-    | 'AmbientTemperature'
-    | 'AmbientTemperatureFahrenheit'
-    | 'RelativeHumidity'
-    | 'UserComment'
->;
-
-// = {
-//     AmbientTemperature: string;
-//     Humidity: string;
-//     UserComment
-// }
-
-enum Mount {
-    "foo",
-}
-
-enum Telescope {
-    "foo",
-}
-
-type ImageTags = {
-    dominantColor?: string;
-}
-/*
-
- PERHAPS MAKE THIGNS LIKE WEATHER
- ASRONOMY
- ETC..    PLUGINS instead of built in
-
-*/
-type AstronomyTags = {
-    weather?: WeatherTags;
-    mount?: Mount;
-    telescope?: Telescope;
-    tracking?: boolean;
-    target?: {
-        ra: string;
-        dec: string;
-        name: string;
-    }
-}
-
-type FacesTags = {
-    recognized?: RecognizeType[];
-    detected?: DetectType[];
-};
-
-type CropOptions = {
-    postfix?: string;
-    dir?: string;
-}
-
-type ExtractedFace = {
-    image: string,
-    crop: string,
-}
-
-type ExtractedRecognizedFace = {
-    subject: unknown;
-    subject_id: string;
-} & ExtractedFace;
-
-type ExtractedDetectedFace = ExtractedFace
-
-type ExtractFaces = {
-    detected?: ExtractedDetectedFace[],
-    recognized?: ExtractedRecognizedFace[]
-}
-
-type AllMediaData = {
-    exif: Tags;
-    image?: ImageTags,
-    astronomy?: AstronomyTags
-    faces?: FacesTags
-};
 
 const GLOBAL_SIMILARITY_THRESHOLD = .97;
 
@@ -183,7 +95,7 @@ class Media extends Fs {
         }
     }
 
-    public async exportAllData({ dir, jsonfile, extractFaces = false }: { dir?: string, jsonfile?: string, extractFaces: boolean }): Promise<AllMediaData> {
+    public async exportAllData({ dir, jsonfile, extractFaces = false }: { dir?: string, jsonfile?: string, extractFaces: boolean }): Promise<ScannedFile> {
         const data = await this.getAllData();
         const filename = jsonfile || `${dir || this._exif.dir}/${this._exif.name}.json`;
         if (extractFaces) {
@@ -195,7 +107,7 @@ class Media extends Fs {
         return data;
     }
 
-    public async getAllData(): Promise<AllMediaData> {
+    public async getAllData(): Promise<ScannedFile> {
         let dominantColor = '#d4d4d4';
 
         try {
@@ -252,8 +164,8 @@ class Media extends Fs {
                         return {
                             image: await this.crop(c, { dir, postfix: `___crop${i.toString()}` }),
                             crop: c,
-                            subject: subjects[0],
-                            subject_id: subjects[0].subject,
+                            similarity: subjects[0].subject,
+                            subjectId: subjects[0].subject,
                             ...rest,
                         }
                     } else {
