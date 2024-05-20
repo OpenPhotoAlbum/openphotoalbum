@@ -1,12 +1,16 @@
 import pathlib from 'path';
 import { ExifTool, Tags } from 'exiftool-vendored';
-import { cpus } from 'os';
+
 import Fs from './Fs';
 import Logger from '../../Logger';
 
+// import { cpus } from 'os';
+// Math.round(cpus().length / 4),
+const EXIFTOOL_CPU_COUNT = 5;
+
 const default_exiftool_config = {
     taskTimeoutMillis: 5000,
-    maxProcs: Math.round(cpus().length / 4),
+    maxProcs: EXIFTOOL_CPU_COUNT,
     maxTasksPerProcess: 500,
     taskRetries: 1,
     ignoreZeroZeroLatLon: true,

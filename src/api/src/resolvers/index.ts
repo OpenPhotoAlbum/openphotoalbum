@@ -1,2 +1,8 @@
-export * from './Scan.resolvers';
-export * from './Img.resolvers';
+export {
+    scanAndExportUploadedImage,
+    scanAndExportDirectory,
+} from './Scan.resolvers';
+
+export {
+    getImageBuffer
+} from './GetImageBuffer.resolvers';

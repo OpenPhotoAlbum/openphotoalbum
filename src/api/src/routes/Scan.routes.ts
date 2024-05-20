@@ -1,10 +1,10 @@
-import express, { Request, Response } from 'express';
-import fs from 'fs';
-import { scanAndExportUploadedImage, scanAndExportDirectory } from 'src/resolvers';
-
 import dotenv from "dotenv";
-import { image as brandImage } from 'src/types/Image.types';
+import fs from 'fs';
 import path from 'path';
+import express, { Request, Response } from 'express';
+
+import { scanAndExportUploadedImage, scanAndExportDirectory } from 'src/resolvers';
+import { image as brandImage } from 'src/types';
 
 dotenv.config({ path: '/home/openphoto/config/.env.local' });
 
@@ -40,7 +40,7 @@ router.post('/scan/new', async (req: Request, res: Response) => {
         })
     }
 });
-// '/home/uploads/cayce/iPhone/Recents/scans/2006-10-12_20-49-11_IMG_1588.json'
+
 router.post('/scan/directory', async (req: Request, res: Response) => {
     const { src: dir = '', limit, from = 0 } = req.body;
 

@@ -1,7 +1,8 @@
 import dotenv from "dotenv";
 import fs from 'fs';
 import express, { Request, Response } from 'express';
-import { offset, readAllDirectories, readAllFiles, take } from 'src/util/fs';
+
+import { offset, readAllDirectories, take } from 'src/util/fs';
 
 dotenv.config({ path: '/home/openphoto/config/.env.local' });
 

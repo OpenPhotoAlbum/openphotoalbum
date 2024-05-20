@@ -1,20 +1,20 @@
 {
-	"compilerOptions": {
-		"module": "ESNext",
-		"target": "ESNext",
-		"moduleResolution": "node",
-		"emitDeclarationOnly": false,
-		"types": ["node", "jest"],
-		"declaration": true,
-		"declarationDir": "./dist",
-		"outDir": "./dist",
-		"esModuleInterop": true,
-		"sourceMap": true,
-		"declarationMap": true,
-		"allowSyntheticDefaultImports": true,
-		"baseUrl": "./",
-		"paths": { "types": ["src/types"] }
-	},
-	"exclude": ["src/**/dist/**", "node_modules", "dist", "**/*.spec.*"],
-	"include": ["src"]
+  "compilerOptions": {
+    "module": "ESNext",
+    "target": "ESNext",
+    "moduleResolution": "node",
+    "emitDeclarationOnly": false,
+    "types": ["node", "jest"],
+    "declaration": true,
+    "declarationDir": "./dist",
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "declarationMap": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": "./",
+    "paths": { "types": ["src/types"] }
+  },
+  "exclude": ["src/**/dist/**", "node_modules", "dist", "**/*.spec.*"],
+  "include": ["src"]
 }

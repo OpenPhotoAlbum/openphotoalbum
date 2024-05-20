@@ -1,10 +1,9 @@
-import express, { Request, Response } from 'express';
-import dotenv from "dotenv";
 import mime from "mime-types";
-import Media from "src/media-exif";
 import { commandOptions } from 'redis';
-import { redisClient } from 'src';
-import { Image } from "src/types/Image.types";
+
+import { redisClient } from 'src/redis';
+import Media from "src/media-exif";
+import { Image } from "src/types";
 
 export const getImageBuffer = async (image: Image, query) => {
     const { strip: _strip } = query as { strip?: string };
@@ -34,7 +33,6 @@ export const getImageBuffer = async (image: Image, query) => {
         console.log(e);
     }
 
-    console.log({ postredis: true });
     try {
         const img = new Media({ path: image });
         const buffer = await img.toBuffer({ strip });
