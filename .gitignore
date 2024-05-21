@@ -1,4 +1,5 @@
 services/data/
+services/database/data
 services/compreface/data/
 node_modules
 sample

@@ -1,9 +1,9 @@
-import request from 'request-promise';
+import request, { Options } from 'request-promise';
 import fs from 'fs';
-import { RECOGNITION_HEADERS, RECOGNITION_URL } from './config';
+import { RECOGNITION_HEADERS, RECOGNITION_URL } from './__tmp/compreface/config';
 
 export const getSubjects = async (): Promise<{ subjects: string[] }> => {
-    const options = {
+    const options: Options = {
         method: "GET",
         url: `${RECOGNITION_URL}/subjects`,
         headers: RECOGNITION_HEADERS,
@@ -14,7 +14,7 @@ export const getSubjects = async (): Promise<{ subjects: string[] }> => {
 }
 
 export const addSubject = async (id: string): Promise<any> => {
-    let options: any = {
+    const options: Options = {
         method: "POST",
         url: `${RECOGNITION_URL}/subjects`,
         headers: RECOGNITION_HEADERS,
@@ -26,11 +26,22 @@ export const addSubject = async (id: string): Promise<any> => {
 }
 
 export const addSubjectExample = async (subjectId: string, filename: string): Promise<any> => {
-    let options: any = {
+    const options: Options = {
         method: "POST",
         url: `${RECOGNITION_URL}/faces?subject=${subjectId}`,
         headers: RECOGNITION_HEADERS,
         formData: { "file": fs.createReadStream(filename) },
+        json: true
+    };
+    return await request(options);
+}
+
+export const renameSubject = async (subjectId: string, newSubjectId: number): Promise<any> => {
+    const options: Options = {
+        method: "PUT",
+        url: `${RECOGNITION_URL}/subjects/${subjectId}`,
+        headers: RECOGNITION_HEADERS,
+        body: { subject: newSubjectId },
         json: true
     };
     return await request(options);

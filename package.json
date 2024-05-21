@@ -11,9 +11,18 @@
   "dependencies": {
     "@supercharge/fs": "^3.4.2",
     "@types/node": "^20.12.12",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "knex": "^2.5.1",
+    "mariadb": "^3.3.0",
+    "mysql": "^2.18.1",
+    "objection": "^3.0.2",
+    "pg": "^8.11.5",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.3",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
+    "@types/request-promise": "^4.1.51",
     "rollup-plugin-node-polyfills": "^0.2.1"
   }
 }

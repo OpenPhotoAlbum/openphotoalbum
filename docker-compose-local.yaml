@@ -54,6 +54,52 @@ services:
       - ${REDIS_CONFIG_FILE}:/usr/local/etc/redis/redis.local.conf
       - redis-cache-openphoto:/data
 
+  db:
+    container_name: openphoto-db
+    image: mariadb
+    restart: always
+    networks:
+      - openphoto
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 300M
+        reservations:
+          cpus: "0.5"
+          memory: 100M
+    logging:
+      options:
+        max-size: "5m"
+        max-file: "3"
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    ports:
+      - ${MARIA_DB_PORT}:3306
+    volumes:
+      - ./${MARIA_DB_MIGRATE}:/docker-entrypoint-initdb.d/
+      - ./${MARIA_DB_MOUNT_DIRECTORY}:/var/lib/mysql
+    environment:
+      MYSQL_USER: ${MARIA_DB_USER}
+      MYSQL_DATABASE: ${MARIA_DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MARIA_DB_ROOT_PASS}
+      MYSQL_PASSWORD: ${MARIA_DB_PASSWORD}
+      TZ: America/New_York
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "${MARIA_DB_USER}",
+          "-p${MARIA_DB_ROOT_PASS}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 networks:
   openphoto:
     external: true

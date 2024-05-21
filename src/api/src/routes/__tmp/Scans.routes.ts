@@ -3,7 +3,7 @@ import fs from 'fs';
 import { readAllFiles } from '../../util/fs';
 import dotenv from "dotenv";
 
-dotenv.config({ path: '/home/openphoto/config/.env.local' });
+dotenv.config({ path: '/home/openphoto/config/.env' });
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR;
 

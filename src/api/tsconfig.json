@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "module": "ESNext",
-    "target": "ESNext",
-    "moduleResolution": "node",
+    "module": "ES2020",
+    "target": "ES2020",
+    "moduleResolution": "Node",
     "emitDeclarationOnly": false,
     "types": ["node", "jest"],
     "declaration": true,
@@ -15,6 +15,12 @@
     "baseUrl": "./",
     "paths": { "types": ["src/types"] }
   },
-  "exclude": ["src/**/dist/**", "node_modules", "dist", "**/*.spec.*"],
+  "exclude": [
+    "src/**/dist/**",
+    "node_modules",
+    "dist",
+    "**/*.spec.*",
+    "**/*.js"
+  ],
   "include": ["src"]
 }

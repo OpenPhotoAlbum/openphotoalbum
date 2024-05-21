@@ -12,7 +12,7 @@ import { Crop, CropBox } from './src/Sharp';
 import { DetectedFace, RecognizedFace } from 'src/types/Faces.types';
 import { Scan } from "src/types/Scans.types";
 
-dotenv.config({ path: '/home/openphoto/config/.env.local' });
+dotenv.config({ path: '/home/openphoto/config/.env' });
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR;
 const RECOGNITION_KEY = process.env.COMPREFACE_RECOGNITION_KEY;
@@ -148,6 +148,9 @@ class Media extends Fs {
             astronomy: {}
         }
 
+        data.exif.Directory = data.exif.Directory.replace(UPLOADS_DIR, '');
+        data.exif.SourceFile = data.exif.SourceFile.replace(UPLOADS_DIR, '');
+
         return data
     }
 
@@ -246,7 +249,7 @@ class Media extends Fs {
         const filename = `${dir || this._exif.dir}/${this._exif.name}${postfix ? postfix : dir ? '' : '-crop'}.jpg`.replace('//', '/');
         const cropBuffer = await this.sharp().crop(crop);
         this.writeFile({ dest: filename, data: cropBuffer, options: {} })
-        return filename
+        return filename.replace(UPLOADS_DIR, '');
     }
 }
 

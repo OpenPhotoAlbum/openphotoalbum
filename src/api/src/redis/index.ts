@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import * as redis from "redis";
 import connectRedis from "connect-redis";
 
-dotenv.config({ path: '/home/openphoto/config/.env.local' });
+dotenv.config({ path: '/home/openphoto/config/.env' });
 
 const redis_url = `redis://127.0.0.1:${process.env.REDIS_PORT}`;
 

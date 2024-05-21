@@ -6,7 +6,7 @@ import express, { Request, Response } from 'express';
 import { scanAndExportUploadedImage, scanAndExportDirectory } from 'src/resolvers';
 import { image as brandImage } from 'src/types';
 
-dotenv.config({ path: '/home/openphoto/config/.env.local' });
+dotenv.config({ path: '/home/openphoto/config/.env' });
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR;
 
@@ -85,7 +85,7 @@ router.post('/scan/directory', async (req: Request, res: Response) => {
     let scan_result = await scanAndExportDirectory({ dir, from, limit });
 
     try {
-        res.status(200).json(scan_result.map(r => r.replace(UPLOADS_DIR, '')))
+        res.status(200).json(scan_result)
     } catch (e) {
         console.error(e);
         res.status(e.status).json({
@@ -97,24 +97,20 @@ router.post('/scan/directory', async (req: Request, res: Response) => {
 });
 
 router.post('/scan/image', async (req: Request, res: Response) => {
-    const { src } = req.body;
-
-    if (!src) {
-        res.status(400).json({
-            data: null,
-            total: 0,
-            error: 'src is required'
-        });
-        return;
-    }
-
-    const image_path = brandImage(src);
-    let scan_result = await scanAndExportUploadedImage(image_path);
-
     try {
-        if (typeof scan_result === 'string') {
-            scan_result = scan_result.replace(UPLOADS_DIR, '');
+        const { src } = req.body;
+
+        if (!src) {
+            res.status(400).json({
+                data: null,
+                total: 0,
+                error: 'src is required'
+            });
+            return;
         }
+
+        const image_path = brandImage(src);
+        let scan_result = await scanAndExportUploadedImage(image_path);
 
         res.status(200).json(scan_result)
     } catch (e) {

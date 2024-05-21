@@ -1,1 +1,1 @@
-export * from './Compreface.resolvers';
+export * from '../../Compreface.resolvers';

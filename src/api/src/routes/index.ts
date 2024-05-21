@@ -1,9 +1,11 @@
 import ScanRoutes from './Scan.routes';
 import UploadRoutes from './Uploaded.routes';
-import ImgRoutes from './Img.routes';
+import MediaRoutes from './Media.routes';
+import SubjectsRoutes from './Subjects.routes';
 
 export {
-    ImgRoutes,
+    MediaRoutes,
     ScanRoutes,
-    UploadRoutes
+    UploadRoutes,
+    SubjectsRoutes
 }

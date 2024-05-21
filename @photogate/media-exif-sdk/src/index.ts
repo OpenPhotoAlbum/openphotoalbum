@@ -7,7 +7,7 @@ import exifremove from "exifremove";
 import { WriteFileOptions } from 'fs';
 import { Crop, CropBox } from './lib/Sharp';
 
-dotenv.config({ path: '/home/openphoto/config/.env.local' });
+dotenv.config({ path: '/home/openphoto/config/.env' });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ScannedFile = any; // TODO

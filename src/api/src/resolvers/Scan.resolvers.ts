@@ -2,8 +2,9 @@ import dotenv from "dotenv";
 import Media from "src/media-exif";
 import { type Image, image as brandImage } from '../types/Image.types';
 import { readAllFiles, take, offset } from 'src/util/fs';
+import { addMedia } from "src/models/media.model";
 
-dotenv.config({ path: '/home/openphoto/config/.env.local' });
+dotenv.config({ path: '/home/openphoto/config/.env' });
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR;
 const SCANABLE_FILES_REGEX = new RegExp(process.env.SCANABLE_FILES_REGEX.split(",").map(t => `.${t}`).join('|'), 'gi');
@@ -20,7 +21,9 @@ export const scanAndExportUploadedImage = async (_img: Image): Promise<string | 
 
         const res = await media.exportAllData({
             extractFaces: true
-        })
+        });
+
+        await addMedia(img)
         return res
 
     } catch (e) {

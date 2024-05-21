@@ -29,7 +29,7 @@ function writeFile(path, contents, cb) {
     });
 }
 
-dotenv.config({ path: '/home/openphoto/config/.env.local' });
+dotenv.config({ path: '/home/openphoto/config/.env' });
 
 const RECOGNITION_KEY = process.env.COMPREFACE_RECOGNITION_KEY;
 const DETECTION_KEY = process.env.COMPREFACE_DETECTION_KEY;

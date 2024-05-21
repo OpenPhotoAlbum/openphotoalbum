@@ -1,11 +1,11 @@
 import express from 'express';
-
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import dotenv from "dotenv";
-import { ScanRoutes, UploadRoutes, ImgRoutes } from './routes';
+import { ScanRoutes, UploadRoutes, MediaRoutes, SubjectsRoutes } from './routes';
+import './models';
 
-dotenv.config({ path: '/home/openphoto/config/.env.local' });
+dotenv.config({ path: '/home/openphoto/config/.env' });
 
 console.log('API STARTED')
 
@@ -22,10 +22,15 @@ app.use((req, res, next) => {
 
 app.use(cors({ origin: ['http://10.0.0.15:8777'] }));
 
-app.use(ImgRoutes)
+app.use(MediaRoutes)
 app.use(ScanRoutes);
 app.use(UploadRoutes);
+app.use(SubjectsRoutes);
 
-app.listen(process.env.API_PORT, () => {
-    console.log("Server running on port 9447");
-});
+const main = async () => {
+    app.listen(process.env.API_PORT, () => {
+        console.log("Server running on port 9447");
+    });
+}
+
+main();

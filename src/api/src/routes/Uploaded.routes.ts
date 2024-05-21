@@ -4,7 +4,7 @@ import express, { Request, Response } from 'express';
 
 import { offset, readAllDirectories, take } from 'src/util/fs';
 
-dotenv.config({ path: '/home/openphoto/config/.env.local' });
+dotenv.config({ path: '/home/openphoto/config/.env' });
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR;
 
