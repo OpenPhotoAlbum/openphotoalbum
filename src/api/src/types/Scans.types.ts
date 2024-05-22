@@ -14,7 +14,7 @@ export const scanJsonPath = (p: string) => p as ScanJsonPath;
 export type Scan = {
     id?: number;
     exif: Tags;
-    image?: ImageTags;
+    src?: string;
     faces?: {
         recognized?: RecognizedFace[];
         detected?: DetectedFace[];

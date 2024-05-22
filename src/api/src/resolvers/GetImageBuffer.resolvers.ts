@@ -1,7 +1,5 @@
 import mime from "mime-types";
-import { commandOptions } from 'redis';
 
-import { redisClient } from 'src/redis';
 import Media from "src/media-exif";
 import { Image } from "src/types";
 
@@ -10,35 +8,17 @@ export const getImageBuffer = async (image: Image, query) => {
     const strip = _strip === 'true' ? true : false;
 
     const mimetype = mime.lookup(image);
+    const expiry_time = Date.now() + parseInt(process.env.REDIS_EXP_SECONDS_MEDIA) * 1000;
 
     let headers = {
         "Content-Type": mimetype,
-        "Cache-Control": "public, max-age=86400",
-        Expires: new Date(Date.now() + 86400000).toUTCString(),
+        "Cache-Control": `public, max-age=${process.env.REDIS_EXP_SECONDS_MEDIA}`,
+        Expires: new Date(expiry_time).toUTCString(),
     };
-
-    const redisId = `media:${image}:${query}`;
-
-    try {
-        const { buffer } = await redisClient.hGetAll(
-            commandOptions({ returnBuffers: true }),
-            redisId
-        );
-
-        if (buffer) {
-            headers["Content-Length"] = buffer.length;
-            return { buffer, headers }
-        }
-    } catch (e) {
-        console.log(e);
-    }
 
     try {
         const img = new Media({ path: image });
         const buffer = await img.toBuffer({ strip });
-
-        await redisClient.hSet(redisId, "buffer", buffer);
-        await redisClient.expire(redisId, parseInt(process.env.REDIS_EXPIRATION_MEDIA));
 
         headers["Content-Length"] = buffer.length;
         return { buffer, headers };

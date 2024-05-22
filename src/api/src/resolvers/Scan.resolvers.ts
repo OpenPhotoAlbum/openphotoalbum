@@ -3,11 +3,14 @@ import Media from "src/media-exif";
 import { type Image, image as brandImage } from '../types/Image.types';
 import { readAllFiles, take, offset } from 'src/util/fs';
 import { addMedia } from "src/models/media.model";
+import Logger from "src/Logger";
 
 dotenv.config({ path: '/home/openphoto/config/.env' });
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR;
 const SCANABLE_FILES_REGEX = new RegExp(process.env.SCANABLE_FILES_REGEX.split(",").map(t => `.${t}`).join('|'), 'gi');
+
+const logger = new Logger('Scan.resolvers.ts');
 
 export const scanAndExportUploadedImage = async (_img: Image): Promise<string | { FAILED: { image: Image; error: any; } }> => {
     try {
@@ -32,6 +35,7 @@ export const scanAndExportUploadedImage = async (_img: Image): Promise<string | 
 }
 
 export const scanAndExportDirectory = async ({ dir: _dir = UPLOADS_DIR, from, limit }, check?: (arg: string) => boolean) => {
+    logger.info(`Scanning ${limit} new images`);
 
     let dir = _dir;
 
@@ -43,11 +47,15 @@ export const scanAndExportDirectory = async ({ dir: _dir = UPLOADS_DIR, from, li
 
     let scan_result = [];
 
+    let cnt = 0;
     for (let i of r) {
         const image_path = brandImage(i);
         const result = await scanAndExportUploadedImage(image_path);
         scan_result.push(result);
+        logger.info(`Scanned ${image_path}: ${cnt + 1}/${r.length}`);
+        cnt++;
     }
 
+    logger.info(`Scanning complete`);
     return scan_result;
 }
