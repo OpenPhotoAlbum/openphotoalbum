@@ -76,6 +76,14 @@ class Media extends Fs {
         this.scan_directory = `${this._exif.dir}/scans`;
         this.json_scan_file = `${this.scan_directory}/${this._exif.name}.json`;
         this.isImage = this.mimetype.includes('image');
+
+        if (this.filename.toLowerCase().includes('.heic')) {
+            this.logger.record('media_repair', `HEIC file: ${this.filename}`);
+        }
+
+        if (this.filename.toLowerCase().includes('.gif')) {
+            this.logger.record('media_repair', `GIF file: ${this.filename}`);
+        }
     }
 
     sharp(): Sharp | undefined {
@@ -115,7 +123,7 @@ class Media extends Fs {
             this._tags = await this._exif.readTags()
             return this._tags;
         } catch (e) {
-            this.logger.error(e)
+            this.logger.error('getExifTags', e)
         }
     }
 
@@ -132,30 +140,36 @@ class Media extends Fs {
     }
 
     public async getAllData(): Promise<Scan> {
-        let dominantColor: string | undefined;
+        try {
+            let dominantColor: string | undefined;
 
-        if (this.isImage) {
-            try {
-                dominantColor = await this.getDominantColor();
-            } catch (e) {
-                this.logger.warn(e)
+            if (this.isImage) {
+                try {
+                    dominantColor = await this.getDominantColor();
+                } catch (e) {
+                    this.logger.warn(e)
+                }
             }
+
+            const data = {
+                exif: await this.getExifTags(),
+                image: { dominantColor },
+                astronomy: {}
+            }
+
+            data.exif.Directory = data.exif.Directory.replace(UPLOADS_DIR, '');
+            data.exif.SourceFile = data.exif.SourceFile.replace(UPLOADS_DIR, '');
+
+            return data;
+        } catch (e) {
+            this.logger.error('getAllData', e)
         }
-
-        const data = {
-            exif: await this.getExifTags(),
-            image: { dominantColor },
-            astronomy: {}
-        }
-
-        data.exif.Directory = data.exif.Directory.replace(UPLOADS_DIR, '');
-        data.exif.SourceFile = data.exif.SourceFile.replace(UPLOADS_DIR, '');
-
-        return data
     }
 
     public async detectFaces(): Promise<DetectedFace[]> {
-        const { result, status } = await this._Detection.detect(this.filename, {
+        let file = this.filename;
+
+        const { result, status } = await this._Detection.detect(file, {
             face_plugins: ["age", "embedding", "gender", "landmarks", "pose", "mask"],
             limit: 8,
             det_prob_threshold: ".8",
@@ -164,7 +178,9 @@ class Media extends Fs {
     }
 
     public async recognizeFaces(): Promise<RecognizedFace[]> {
-        const { result, status } = await this._Recognition.recognize(this.filename, {
+        let file = this.filename;
+
+        const { result, status } = await this._Recognition.recognize(file, {
             face_plugins: ["age", "embedding", "gender", "landmarks", "pose", "mask"],
             limit: 8,
             det_prob_threshold: "0.9",
@@ -195,9 +211,14 @@ class Media extends Fs {
                         }
                     } else {
                         // throw new Error('Recognized face not close enough')
+                        this.logger.record('media_repair', `Recognized face not close enough: Subject:${subject}, Image:${this.filename}`)
                     }
                 } catch (e) {
-                    this.logger.error(e)
+                    if (e.message === 'extract_area: bad extract area') {
+                        this.logger.record('crop', `Bad crop area: ${c}, Image:${this.filename}`)
+                    } else {
+                        this.logger.error(`extractFaces.recognizedRes: ${this.filename}`, e);
+                    }
                 }
             }))
             : []
@@ -220,7 +241,11 @@ class Media extends Fs {
                             ...detected
                         }
                     } catch (e) {
-                        this.logger.error(e)
+                        if (e.message === 'extract_area: bad extract area') {
+                            this.logger.record('crop', `Bad crop area: ${c}, Image:${this.filename}`)
+                        } else {
+                            this.logger.error(`extractFaces.detectedRes: ${this.filename}`, e);
+                        }
                     }
                 }
             }))

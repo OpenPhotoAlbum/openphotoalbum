@@ -12,9 +12,16 @@ export const getClosestCityIdByCoords = async (
         const data = await db.raw(`
         select id, ST_Distance_Sphere( point (${lon}, ${lat}), point(longitude, latitude)) * .000621371192 as distance_in_miles 
         from geo_cities having distance_in_miles <= 10 order by distance_in_miles asc LIMIT 1`);
-        return { data: data[0][0].id, error: null, status: 200 };
+
+        if (data[0][0]?.id) {
+            return { data: data[0][0].id, error: null, status: 200 };
+        } else {
+            logger.record('geolocation', `No city found within 10 miles of Lat: ${lat} Lon: ${lon}`);
+            return { data: null, error: 'No city found within 10 miles', status: 404 };
+        }
+
     } catch (e) {
-        logger.error(e)
+        logger.error('getClosestCityIdByCoords', e)
     }
 };
 

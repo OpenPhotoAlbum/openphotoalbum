@@ -1,5 +1,8 @@
 import fs from "fs";
 import path from "path";
+import Logger from "src/Logger";
+
+const logger = new Logger('Scan.resolvers.ts');
 
 export function* readAllFiles(
     dir: string,
@@ -12,12 +15,22 @@ export function* readAllFiles(
         if (file.isDirectory()) {
             yield* readAllFiles(path.join(dir, file.name), match, check);
         } else {
-            if (!match.test(file.name)) continue;
 
             if (!check(path.join(dir, file.name))) {
                 continue;
             }
-            yield path.join(dir, file.name);
+
+            // TODO: Fix this regex, for some reason case-insensitive flag is not working
+            if (new RegExp(/(.jpg|.png|.gif|.jpeg|.heic|.mov|.mp4|.tif|.tiff|.cr2|.dng|.mkv|.3gp|.webp|.m4v|.jpx)$/gim).test(file.name)) {
+                yield path.join(dir, file.name);
+            } else {
+                if (new RegExp(/(.json|.bash_logout|.bashrc|.profile)$/gim).test(file.name)) {
+                    continue;
+                } else {
+                    logger.record('scan-skip', `${file.name}`);
+                }
+            }
+
         }
     }
 }

@@ -1,5 +1,6 @@
 import sharp, { OutputInfo } from "sharp";
 import color from "color";
+import fs from 'fs';
 import mime from 'mime';
 
 type SharpType = {
@@ -32,9 +33,6 @@ class Sharp {
     constructor(args: SharpType) {
         const { path } = args;
         this.mimetype = mime.getType(path);
-        if (!this.supportedMIMEtypeInput.includes(this.mimetype)) {
-            throw new Error(`File type not supported: ${this.mimetype}`)
-        }
         this.path = path;
     }
 
@@ -45,6 +43,25 @@ class Sharp {
     private assertImage() {
         if (!this.mimetype.includes("image")) {
             throw new Error("toFile can only be used with image types");
+        }
+    }
+
+    async convertHeicToJpg(path) {
+        const newName = path.replace('.heic', '.jpg');
+        try {
+            fs.accessSync(newName);
+            return newName;
+        } catch (e) {
+            const newFileBuffer = await this.sharp(path)
+                .jpeg({
+                    mozjpeg: true,
+                    progressive: true,
+                })
+                .withMetadata()
+                .rotate()
+                .toBuffer();
+
+            fs.writeFileSync(newName, newFileBuffer);
         }
     }
 

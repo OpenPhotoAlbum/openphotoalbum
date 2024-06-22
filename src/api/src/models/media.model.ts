@@ -9,19 +9,32 @@ import Media from 'src/media-exif';
 import { Headers } from 'request';
 import { getClosestCityIdByCoords, getGeolocationById } from './geolocation.model';
 import { Geolocation } from 'src/types/Geolocation.types';
+import Logger from 'src/Logger';
+import { ExifDateTime } from 'exiftool-vendored';
 
 type RawFacesModel = Timestamps & { id: number, media_id: number, subject_id: number; path: string, verified: boolean, similarity: number, data: string };
 type RawMediaModel = Timestamps & { id: number, path: Image, exif: string, city_id: number; };
+
+const logger = new Logger('media.model.ts');
 
 export const addMedia = async (path: Image): Promise<number> => {
 
     const insertDatabaseRows = async (data: Scan & { city_id?: number }) => {
         const { faces: { detected, recognized } } = data = { faces: { detected: [], recognized: [] }, ...data };
+        let isScreenshot = data.exif.UserComment && data.exif.UserComment.toLocaleLowerCase().includes('screenshot') ? true : null;
+        let date_time_original = data.exif.DateTimeOriginal;
+
+        if (date_time_original && typeof date_time_original !== 'string') {
+            const d = data.exif.DateTimeOriginal as ExifDateTime;
+            date_time_original = d.rawValue;
+        }
 
         const media_id = await db('media')
             .insert({
                 path,
                 exif: JSON.stringify(data.exif),
+                screenshot: isScreenshot,
+                date_time_original,
                 city_id: data.city_id
             });
 
@@ -57,11 +70,18 @@ export const addMedia = async (path: Image): Promise<number> => {
         let city_id: number;
 
         const { GPSLatitude, GPSLongitude } = await media.getExifTags();
+
         if (GPSLatitude && GPSLongitude) {
-            const { data: _city_id } = await getClosestCityIdByCoords(
+            const gps_res = await getClosestCityIdByCoords(
                 GPSLatitude, GPSLongitude
             );
-            city_id = _city_id;
+
+            if (gps_res) {
+                const { data: _city_id } = gps_res;
+                city_id = _city_id;
+            } else {
+                logger.record('geolocation', `Could not find city id for coordinates: ${GPSLatitude}, ${GPSLongitude}`);
+            }
         }
 
         const data: Scan = JSON.parse(fs.readFileSync(media.json_scan_file, { encoding: 'utf-8' }));
@@ -85,7 +105,6 @@ export const getMediaByPath = async (path: Image): Promise<Partial<Scan> & { geo
 
         if (media_data?.city_id) {
             geolocation = await getGeolocationById(media_data.city_id);
-            console.log(geolocation)
         }
 
         const faces_data = await db<RawFacesModel>('faces')

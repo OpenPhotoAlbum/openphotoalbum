@@ -4,7 +4,7 @@ CREATE TABLE `geo_cities` (
     `latitude` DOUBLE NOT NULL,
     `longitude` DOUBLE NOT NULL,
     `city` VARCHAR(255) NOT NULL,
-    `state_code` varchar(2) not null default '',
+    `state_code` varchar(18) not null default '',
     `county_name` VARCHAR(255),
     `county_names_all` VARCHAR(255),
     `timezone` VARCHAR(255),

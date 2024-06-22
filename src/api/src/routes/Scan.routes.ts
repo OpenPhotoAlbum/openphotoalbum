@@ -27,19 +27,41 @@ const scanLock = (req: Request, res: Response, next: Function) => {
     }
 }
 
-router.post('/scan/new', scanLock, async (req: Request, res: Response) => {
+router.post('/scan/new/wait', scanLock, async (req: Request, res: Response) => {
     try {
-        const { count = 1 } = req.body;
+        const { count, batch = 50, dir = UPLOADS_DIR } = req.body;
 
         if (count <= 0) throw new Error('count is required');
 
         const filter = (f: string) => {
+            if (f.includes('/scans/')) return false;
             const scan_directory = `${path.parse(f).dir}/scans`;
             const json_scan_file = `${scan_directory}/${path.parse(f).name}.json`;
             return !fs.existsSync(json_scan_file);
         };
 
-        scanAndExportDirectory({ from: 0, limit: count }, filter)
+        await scanAndExportDirectory({ dir, from: 0, limit: count, batch }, filter)
+            .finally(() => { SCAN_LOCK = false; });
+
+        res.status(200).json({ completed: true });
+    } catch (e) {
+        SCAN_LOCK = false;
+        logger.error(e);
+        res.status(e.status).json({ started: false, error: e.message })
+    }
+});
+
+router.post('/scan/new', scanLock, async (req: Request, res: Response) => {
+    try {
+        const { count, batch = 50 } = req.body;
+
+        const filter = (f: string) => {
+            const scan_directory = `${path.parse(f).dir}/scans`;
+            const json_scan_file = `${scan_directory}/${path.parse(f).name}.json`;
+            return !fs.existsSync(json_scan_file) && !f.includes('/scans/');
+        };
+
+        scanAndExportDirectory({ from: 0, limit: count, batch }, filter)
             .finally(() => { SCAN_LOCK = false; });
 
         res.status(200).json({ started: true });
@@ -52,7 +74,7 @@ router.post('/scan/new', scanLock, async (req: Request, res: Response) => {
 
 router.post('/scan/directory', scanLock, async (req: Request, res: Response) => {
     try {
-        const { src: dir = '', limit, from = 0 } = req.body;
+        const { src: dir = '', limit, from = 0, batch = 50 } = req.body;
 
         // Validate inputs
         if (!dir) throw new Error('src is required')
@@ -61,7 +83,15 @@ router.post('/scan/directory', scanLock, async (req: Request, res: Response) => 
         fs.lstatSync(`${UPLOADS_DIR}/${dir}`).isDirectory();
 
         logger.info(`Scanning directory ${dir}`);
-        scanAndExportDirectory({ dir, from, limit })
+
+
+        const filter = (f: string) => {
+            const scan_directory = `${path.parse(f).dir}/scans`;
+            const json_scan_file = `${scan_directory}/${path.parse(f).name}.json`;
+            return !fs.existsSync(json_scan_file) && !f.includes('/scans/');
+        };
+
+        scanAndExportDirectory({ dir, from: 0, limit, batch }, filter)
             .finally(() => { SCAN_LOCK = false; });
 
         res.status(200).json({ started: true });

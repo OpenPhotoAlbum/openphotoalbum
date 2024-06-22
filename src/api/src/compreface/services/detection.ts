@@ -3,6 +3,9 @@ import { stringify } from "native-querystring";
 import Api from "../util/fetch";
 import type { ServiceConfig, Options } from "../../types/compreface";
 import { DetectedFace, Face } from "src/types/Faces.types";
+import Logger from "src/Logger";
+
+const logger = new Logger('Compreface>DetectionService');
 
 export class DetectionService {
   private api: Api;
@@ -38,11 +41,13 @@ export class DetectionService {
   ): Promise<{ result: DetectedFace[]; status: number }> {
     const imageSrc = imagePath;
     let img: string;
+
     try {
       img = fs.readFileSync(imageSrc, { encoding: "base64" });
     } catch (e) {
       return { result: undefined, status: 404 };
     }
+
     const { limit, det_prob_threshold, status, face_plugins } = query;
     const _options: {
       limit?: number;
@@ -64,7 +69,7 @@ export class DetectionService {
       const { result }: { result: DetectedFace[] } = await res.json();
       return { result, status: res.status };
     } catch (e) {
-      console.log(e)
+      logger.record('compreface', `[DETECT FAILURE] ${imagePath} ${e.message}`)
       return { result: undefined, status: e.status };
     }
   }

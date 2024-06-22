@@ -1,5 +1,7 @@
 import express, { Request, Response } from 'express';
 import dotenv from "dotenv";
+import mime from "mime-types";
+import fs from 'fs';
 
 import { image } from 'src/types/Image.types';
 import { getImageBuffer } from 'src/resolvers';
@@ -9,11 +11,31 @@ dotenv.config({ path: '/home/openphoto/config/.env' });
 
 const router = express.Router();
 
-router.get('/img*', async (req: Request, res: Response) => {
+const UPLOADS_DIR = process.env.UPLOADS_DIR;
+
+router.get('/static*', async (req: Request, res: Response) => {
     try {
-        const image_path = image(decodeURI(req.path.replace('/img', '')));
-        const { buffer, headers } = await getImageBuffer(image_path, req.query);
-        return res.set(headers).status(200).send(buffer);
+        const media_path = image(decodeURI(req.path.replace('/static', '')));
+		const mimeLookup = mime.lookup(media_path);
+		const isImage = mimeLookup && mimeLookup.includes("image/");
+		const isVideo = mimeLookup && mimeLookup.includes("video/");
+        
+        if (isImage) {
+            const { buffer, headers } = await getImageBuffer(media_path, req.query);
+            return res.set(headers).status(200).send(buffer);
+        }
+
+        if (isVideo) {
+				const headers = {
+					"Content-Type": mimeLookup,
+					"Cache-Control": "public, max-age=86400",
+					Expires: new Date(Date.now() + 86400000).toUTCString(),
+				};
+				res.contentType(mimeLookup).set(headers);
+				const readStream = fs.createReadStream(`${UPLOADS_DIR}${media_path}`);
+				readStream.pipe(res);
+        }
+
     } catch (e) {
         console.error(e);
         res.status(404).send()

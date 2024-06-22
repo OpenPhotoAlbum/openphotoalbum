@@ -6,20 +6,19 @@ const path = require("path");
  * @returns { Promise<void> }
  */
 exports.up = async function (knex) {
-  await knex.schema.dropTableIfExists("geo_cities");
-  await knex.schema.dropTableIfExists("geo_states");
-  await knex.schema.dropTableIfExists("geo_countries");
-  await knex.schema.dropTableIfExists("faces");
-  await knex.schema.dropTableIfExists("faces");
+  // await knex.schema.hasTable('media')
   await knex.schema.dropTableIfExists("faces");
   await knex.schema.dropTableIfExists("subjects");
   await knex.schema.dropTableIfExists("media");
-  // await knex.schema.hasTable('media')
+  await knex.schema.dropTableIfExists("geo_cities");
+  await knex.schema.dropTableIfExists("geo_states");
+  await knex.schema.dropTableIfExists("geo_countries");
 
   await knex.schema.createTable("geo_countries", (table) => {
     table.increments("id").unsigned().primary().notNullable();
-    table.integer("phone_code").notNullable().unsigned();
+    table.varchar("phone_code");
     table.varchar("country_code", 2).notNullable().unique();
+    table.varchar("iso3", 3).unique();
     table.varchar("country_name", 80).notNullable().unique();
     table.timestamp("created_at").defaultTo(knex.fn.now());
     table
@@ -29,7 +28,7 @@ exports.up = async function (knex) {
 
   await knex.schema.createTable("geo_states", (table) => {
     table.increments("id").unsigned().primary().notNullable();
-    table.varchar("code", 2).notNullable().defaultTo("").unique();
+    table.varchar("code", 18).notNullable().defaultTo("").unique();
     table.varchar("name", 128).notNullable().unique().defaultTo("");
     table
       .varchar("country_code", 2)
@@ -57,6 +56,8 @@ exports.up = async function (knex) {
       .onDelete("CASCADE");
     //
     table.json("exif");
+    table.boolean("screenshot").defaultTo(null);
+    table.datetime("date_time_original");
     //
     table.timestamps(true, true, true);
   });
@@ -102,10 +103,10 @@ exports.up = async function (knex) {
  * @returns { Promise<void> }
  */
 exports.down = async function (knex) {
-  await knex.schema.dropTableIfExists("geo_cities");
-  await knex.schema.dropTableIfExists("geo_states");
-  await knex.schema.dropTableIfExists("geo_countries");
   await knex.schema.dropTableIfExists("faces");
   await knex.schema.dropTableIfExists("subjects");
   await knex.schema.dropTableIfExists("media");
+  await knex.schema.dropTableIfExists("geo_cities");
+  await knex.schema.dropTableIfExists("geo_states");
+  await knex.schema.dropTableIfExists("geo_countries");
 };
